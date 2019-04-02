@@ -1,0 +1,38 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Dota2 Replay Viewer</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/style.css') }}" />
+  </head>
+  <body>
+    <div class="container">
+      <section>
+        {%include 'about.html' %}
+      </section>
+      <form name="" action="http://127.0.0.1:5000/login/user/" method="post" crossorigin>
+        <h1>Login</h1>
+          <p>First time here? Please <a href="{{ url_for("flare_register") }}">register</a></p>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <br /><span style="background: #f002;">
+                {% for message in messages %}
+                  {{ message }}
+                {% endfor %}
+                </span>
+              {% endif %}
+            {% endwith %}
+          <fieldset>
+            <legend>Username</legend>
+            <input type="text" name="username" placeholder="Username" />
+          </fieldset>
+          <fieldset>
+            <legend>Password</legend>
+            <input type="password" name="password" placeholder="Password" />
+          </fieldset>
+          <input type="checkbox" name="remember"> &mdash; Remember Me</input>
+          <br />
+          <input type="submit" value="Register" />
+      </form>
+    </div>
+  </body>
+</html>

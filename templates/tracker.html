@@ -1,0 +1,134 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Dota2 Replay Viewer</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <style type="text/css">
+      body {
+        background: #000;
+      }
+      #drawcanvas {
+        margin: 0 auto;
+        background-image: url('{{ url_for("static", filename="images/minimap.png") }}');
+        background-size: 100% 100%;
+      }
+    </style>
+    <script>
+      window.onload = () => {
+        let canvas = document.getElementById("drawcanvas")
+        let ctx = canvas.getContext("2d")
+        const fitToPage = () => {
+          let width = window.innerWidth
+          let height = window.innerHeight
+          let res = Math.min(width, height)
+          canvas.setAttribute("style", "width: " + res.toString() + "px; height: "+res.toString()+"px;");
+        }
+        window.onresize = fitToPage
+        const color_lerp = (a,b,c,p,q,r,f) => {
+          let v1 = Math.floor(a * f + p*(1.0-f))
+          let v2 = Math.floor(b * f + q*(1.0-f))
+          let v3 = Math.floor(c * f + q*(1.0-f))
+          return "rgb(" + v1.toString() + ","+v2.toString()+","+v3.toString()+")"
+        };
+        const get_hp_color = (hp) => { // 0<=hp<=1
+          return color_lerp(0,255,0,255,0,0,hp);
+        }
+
+        let color = ["#0f0","#0f0","#0f0","#0f0","#0f0","#f00", "#f00","#f00","#f00","#f00"]
+        let strokw = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+        ctx.fillStyle = "#ffb600"
+        ctx.lineWidth = 5
+        let X = [[],[],[],[],[],[],[],[],[],[],[],[]]
+        let Y = [[],[],[],[],[],[],[],[],[],[],[],[]]
+        let Ang = [[],[],[],[],[],[],[],[],[],[],[],[]]
+        let HP = [[],[],[],[],[],[],[],[],[],[],[],[]]
+        let put_circle = (x,y,i) => {
+          // y = 1024-y
+          // x += x_0
+          // y -= y_0
+          ctx.lineWidth=strokw[i]
+          ctx.fillStyle=get_hp_color(HP[i][0])
+          ctx.beginPath()
+          y = 1024-y;
+          ctx.arc(x,y,5+strokw[i],0,2*Math.PI)
+          ctx.fill()
+          ctx.strokeStyle = "#000"
+          ctx.stroke()
+        }
+        let put_triangle = (x,y,len,angle) => {
+          let dx1 = len*Math.cos(angle)
+          let dy1 = len*Math.sin(angle)
+          let dx2 = len*Math.cos(angle+Math.PI*0.5)
+          let dy2 = len*Math.sin(angle+Math.PI*0.5)
+          let dx3 = len*Math.cos(angle-Math.PI*0.5)
+          let dy3 = len*Math.sin(angle-Math.PI*0.5)
+          ctx.beginPath()
+          ctx.fillStyle= "#000"
+          ctx.moveTo(x+dx1,1024-y-dy1)
+          ctx.lineTo(x+dx2,1024-y-dy2)
+          ctx.lineTo(x+dx3,1024-y-dy3)
+          ctx.closePath()
+          ctx.fill()
+          ctx.stroke()
+        }
+        let listen_for_location = () => {
+          const sock = new WebSocket("ws://127.0.0.1:9001")
+          sock.addEventListener('open', (event) => {
+            console.log("Connected to the WebSocket server!")
+          });
+          sock.addEventListener('message', (event) => {
+            // console.log(event.data)
+            // Sending space separated coords over the socket for now
+            let res = (event.data).split(" ")
+            let idx = parseInt(res[0])-1
+            let x = parseInt(res[1])
+            let y = parseInt(res[2])
+            let xoff = parseFloat(res[3])
+            let yoff = parseFloat(res[4])
+            let rot = parseFloat(res[5])
+            let hpperc = parseFloat(res[6])
+            let xcoord = ((x)*128.0 + xoff - 8192)*2/32768.0
+            let ycoord = ((y)*128.0 + yoff - 8192)*2/32768.0
+            X[idx].push(xcoord*1024.0)
+            Y[idx].push(ycoord*1024.0)
+            Ang[idx].push(rot)
+            HP[idx].push(hpperc)
+            console.log(hpperc)
+            // console.log(idx, X[idx], Y[idx])
+          });
+        }
+        fitToPage()
+        listen_for_location()
+        setInterval(()=> {
+          for(let i=0;i<10;i++) {
+            if (X[i].length>1) {
+              X[i].shift()
+              Y[i].shift()
+              Ang[i].shift()
+              HP[i].shift()
+            }
+          }
+        }, 1)
+        setInterval(()=> {
+          ctx.clearRect(0,0,canvas.width, canvas.height)
+          for(i=0; i<10; i++) {
+            if (X[i].length>0) {
+              let Xi = X[i][0]
+              let Yi = Y[i][0]
+              // console.log(Xi, Yi)
+              // console.log("putting="+ X[i].toString())
+              put_triangle(Xi,Yi,strokw[i]+20,Ang[i][0])
+              put_circle(Xi, Yi, i)
+            }
+          }
+        }, 1) // roughly repaint every 16ms == 32ticrate
+      }
+    </script>
+  </head>
+  <body>
+      <canvas id="drawcanvas" width="1024" height="1024">
+          <b>Sorry!</b>
+          <p>This page relies on HTML5 Canvas to draw hero movements on the minimap</p>
+      </canvas>
+  </body>
+</html>

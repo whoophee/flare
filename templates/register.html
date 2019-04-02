@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Dota2 Replay Viewer</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/style.css') }}" />
+  </head>
+  <body>
+    <div class="container">
+      <section>
+        {%include 'about.html' %}
+      </section>
+      <form name="" action="http://127.0.0.1:5000/create/user/" method="post" crossorigin>
+        <h1>Register</h1>
+          <p>I don't intend to have registering be mandatory, but it is nice to
+          have a name to associate requests to; to stop egregious activity. Please
+          <i>do not</i> use anything Steam related.</p>
+
+          <p>Have an account? <a href="{{ url_for("flare_login") }}">Login</a> </p>
+          <p>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <br /><span style="background: #f002;">
+                {% for message in messages %}
+                  {{ message }}
+                {% endfor %}
+                </span>
+              {% endif %}
+            {% endwith %}
+          </p>
+          <fieldset>
+            <legend>Username</legend>
+            <input type="text" name="username" />
+          </fieldset>
+          <fieldset>
+            <legend>Password</legend>
+            <input type="password" name="password" />
+          </fieldset>
+          <input type="submit" value="Register" />
+      </form>
+    </div>
+  </body>
+</html>
